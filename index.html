@@ -3,15 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ingegneria: Il Test Finale</title>
+    <title>Ingegneria Wheel</title>
     <style>
         :root {
             --primary: #00f2ff;
+            --secondary: #0062ff;
             --bg: #0f172a;
         }
 
         body {
-            font-family: 'Segoe UI', sans-serif;
+            font-family: 'Segoe UI', Roboto, sans-serif;
             background: #0f172a url('sfondo.jpg') no-repeat center center fixed;
             background-size: cover;
             color: white;
@@ -24,35 +25,65 @@
             overflow: hidden;
         }
 
-        /* Overlay scuro per leggere meglio se lo sfondo non carica */
+        /* Overlay per il contrasto */
         body::before {
             content: "";
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(15, 23, 42, 0.8);
+            background: rgba(15, 23, 42, 0.85);
             z-index: -1;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            font-size: 2.2rem;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            margin: 0;
+            color: var(--primary);
+            text-shadow: 0 0 15px rgba(0, 242, 255, 0.7);
+        }
+
+        p {
+            font-size: 1.1rem;
+            color: #94a3b8;
+            margin-top: 5px;
         }
 
         .wheel-container {
             position: relative;
-            width: 90vw;
+            width: 85vw;
             max-width: 500px;
             aspect-ratio: 1/1;
-            margin: 20px 0;
+        }
+
+        /* La corona retroilluminata */
+        .neon-glow {
+            position: absolute;
+            top: -10px; left: -10px; right: -10px; bottom: -10px;
+            border-radius: 50%;
+            border: 4px solid var(--primary);
+            box-shadow: 0 0 30px var(--primary), inset 0 0 20px var(--primary);
+            z-index: 1;
+            pointer-events: none;
         }
 
         #canvas {
             width: 100%;
             height: 100%;
             border-radius: 50%;
-            border: 10px solid #1e293b;
-            box-shadow: 0 0 30px rgba(0, 242, 255, 0.3);
+            position: relative;
+            z-index: 2;
             transition: transform 5s cubic-bezier(0.15, 0, 0.15, 1);
         }
 
         .pointer {
             position: absolute;
-            top: -20px;
+            top: -25px;
             left: 50%;
             transform: translateX(-50%);
             width: 0; height: 0;
@@ -64,29 +95,30 @@
         }
 
         #spin-btn {
-            padding: 15px 40px;
+            margin-top: 40px;
+            padding: 15px 45px;
             font-size: 1.2rem;
-            font-weight: bold;
-            text-transform: uppercase;
+            font-weight: 900;
             color: white;
-            background: linear-gradient(135deg, #0062ff, #00d2ff);
+            background: linear-gradient(135deg, var(--secondary), var(--primary));
             border: none;
-            border-radius: 50px;
+            border-radius: 10px;
             cursor: pointer;
-            box-shadow: 0 5px 20px rgba(0, 98, 255, 0.4);
-            z-index: 1;
+            text-transform: uppercase;
+            box-shadow: 0 10px 25px rgba(0, 98, 255, 0.4);
+            transition: 0.3s;
+            z-index: 5;
         }
 
-        #spin-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        #spin-btn:hover { transform: scale(1.05); box-shadow: 0 0 30px var(--primary); }
 
         /* Modal Quiz */
         #quiz-overlay {
             display: none;
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(10, 15, 30, 0.95);
-            backdrop-filter: blur(10px);
-            z-index: 1000;
+            background: rgba(10, 15, 30, 0.98);
+            z-index: 2000;
             justify-content: center; align-items: center;
         }
 
@@ -95,7 +127,7 @@
             padding: 30px;
             border-radius: 20px;
             border: 2px solid var(--primary);
-            max-width: 400px; width: 85%;
+            max-width: 400px; width: 90%;
             text-align: center;
         }
 
@@ -103,7 +135,7 @@
             display: block; width: 100%; padding: 15px;
             margin: 10px 0; background: rgba(255,255,255,0.05);
             color: white; border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 10px; cursor: pointer;
+            border-radius: 10px; cursor: pointer; font-size: 1rem;
         }
 
         .ans-btn:hover { background: var(--primary); color: #000; font-weight: bold; }
@@ -111,122 +143,20 @@
 </head>
 <body>
 
-    <h1 style="letter-spacing: 2px; text-shadow: 0 0 10px var(--primary);">ENGINEERING WHEEL</h1>
+    <div class="header">
+        <h1>Ingegneria Wheel</h1>
+        <p>supera l'esame o torna a studiare!</p>
+    </div>
     
     <div class="wheel-container">
         <div class="pointer"></div>
+        <div class="neon-glow"></div>
         <canvas id="canvas" width="600" height="600"></canvas>
     </div>
 
-    <button id="spin-btn">Tenta l'Esame</button>
+    <button id="spin-btn">Avvia Protocollo</button>
 
     <div id="quiz-overlay">
         <div class="quiz-card">
-            <h2 id="quiz-title" style="color: var(--primary); margin-top: 0;">ESAME ORALE</h2>
-            <p id="question-text" style="font-size: 1.1rem;"></p>
-            <div id="options"></div>
-        </div>
-    </div>
-
-    <script>
-        const sectors = [
-            { label: "MECCANICO", color: "#FF5733", questions: [
-                { q: "Qual è l'unità di misura della potenza?", a: ["Joule", "Watt", "Newton"], c: 1 },
-                { q: "Il ciclo Otto è alla base di:", a: ["Motori Diesel", "Motori a Benzina", "Turbine a vapore"], c: 1 }
-            ]},
-            { label: "INFORMATICO", color: "#33FF57", questions: [
-                { q: "Cosa significa 'Open Source'?", a: ["Codice sorgente visibile", "Programma gratuito", "Sito senza password"], c: 0 },
-                { q: "Qual è il cuore di un sistema operativo?", a: ["Shell", "Kernel", "BIOS"], c: 1 }
-            ]},
-            { label: "CIVILE", color: "#3357FF", questions: [
-                { q: "Cosa resiste meglio a compressione?", a: ["Acciaio", "Calcestruzzo", "Legno"], c: 1 },
-                { q: "La trave 'Isostatica' ha quanti vincoli?", a: ["2", "3", "4"], c: 1 }
-            ]},
-            { label: "ELETTRONICO", color: "#F333FF", questions: [
-                { q: "Un diodo permette il passaggio di corrente:", a: ["In entrambi i sensi", "In un solo senso", "Solo se riscaldato"], c: 1 },
-                { q: "Cosa misura il multimetro?", a: ["Solo Volt", "Tensione, Corrente, Resistenza", "La velocità del PC"], c: 1 }
-            ]},
-            { label: "GESTIONALE", color: "#FFB833", questions: [
-                { q: "Cos'è il diagramma di Gantt?", a: ["Un'analisi dei costi", "Una pianificazione temporale", "Uno schema tecnico"], c: 1 },
-                { q: "Cosa si intende per 'Supply Chain'?", a: ["Catena di montaggio", "Catena di approvvigionamento", "Rete vendita"], c: 1 }
-            ]}
-        ];
-
-        const canvas = document.getElementById('canvas');
-        const ctx = canvas.getContext('2d');
-        const spinBtn = document.getElementById('spin-btn');
-        const overlay = document.getElementById('quiz-overlay');
-        
-        const numSectors = sectors.length;
-        const arcSize = (2 * Math.PI) / numSectors;
-        let currentRotation = 0;
-
-        function drawWheel() {
-            ctx.clearRect(0, 0, 600, 600);
-            for (let i = 0; i < numSectors; i++) {
-                const angle = i * arcSize;
-                
-                // Disegna spicchio
-                ctx.beginPath();
-                ctx.fillStyle = sectors[i].color;
-                ctx.moveTo(300, 300);
-                ctx.arc(300, 300, 290, angle, angle + arcSize);
-                ctx.fill();
-                ctx.stroke();
-
-                // Testo
-                ctx.save();
-                ctx.translate(300, 300);
-                ctx.rotate(angle + arcSize / 2);
-                ctx.textAlign = "right";
-                ctx.fillStyle = "#fff";
-                ctx.font = "bold 25px Arial";
-                ctx.fillText(sectors[i].label, 270, 10);
-                ctx.restore();
-            }
-        }
-
-        // Forza il disegno iniziale
-        window.onload = drawWheel;
-
-        spinBtn.onclick = () => {
-            spinBtn.disabled = true;
-            const rotation = 2000 + Math.random() * 2000;
-            currentRotation += rotation;
-            canvas.style.transform = `rotate(${currentRotation}deg)`;
-            
-            setTimeout(() => {
-                const actualAngle = (currentRotation % 360);
-                const sectorIdx = Math.floor((360 - actualAngle + 270) % 360 / (360 / numSectors));
-                startQuiz(sectorIdx);
-            }, 5000);
-        };
-
-        function startQuiz(idx) {
-            const data = sectors[idx];
-            const randomQ = data.questions[Math.floor(Math.random() * data.questions.length)];
-            
-            overlay.style.display = 'flex';
-            document.getElementById('question-text').innerText = `Settore ${data.label}: ${randomQ.q}`;
-            
-            const optionsBox = document.getElementById('options');
-            optionsBox.innerHTML = '';
-            
-            randomQ.a.forEach((option, i) => {
-                const btn = document.createElement('button');
-                btn.className = 'ans-btn';
-                btn.innerText = option;
-                btn.onclick = () => {
-                    if (i === randomQ.c) {
-                        alert("Promosso! Sei un vero Ingegnere!");
-                    } else {
-                        alert("BOCCIATO! Torna a studiare!");
-                    }
-                    location.reload();
-                };
-                optionsBox.appendChild(btn);
-            });
-        }
-    </script>
-</body>
-</html>
+            <h2 id="quiz-title" style="color: var(--primary);">SESSIONE D'ESAME</h2>
+            <p id="question-text" style="font-size: 1.2rem; margin: 
