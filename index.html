@@ -12,7 +12,7 @@
         }
 
         body {
-            font-family: 'Segoe UI', Roboto, sans-serif;
+            font-family: 'Segoe UI', sans-serif;
             background: #0f172a url('sfondo.jpg') no-repeat center center fixed;
             background-size: cover;
             color: white;
@@ -25,7 +25,6 @@
             overflow: hidden;
         }
 
-        /* Overlay per il contrasto */
         body::before {
             content: "";
             position: fixed;
@@ -37,6 +36,7 @@
         .header {
             text-align: center;
             margin-bottom: 30px;
+            z-index: 10;
         }
 
         h1 {
@@ -52,38 +52,43 @@
             font-size: 1.1rem;
             color: #94a3b8;
             margin-top: 5px;
+            text-transform: lowercase;
         }
 
+        /* Contenitore Ruota con Corona Neon */
         .wheel-container {
             position: relative;
             width: 85vw;
             max-width: 500px;
             aspect-ratio: 1/1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
-        /* La corona retroilluminata */
-        .neon-glow {
+        .neon-border {
             position: absolute;
-            top: -10px; left: -10px; right: -10px; bottom: -10px;
+            width: 100%;
+            height: 100%;
             border-radius: 50%;
             border: 4px solid var(--primary);
-            box-shadow: 0 0 30px var(--primary), inset 0 0 20px var(--primary);
+            box-shadow: 0 0 25px var(--primary), inset 0 0 15px var(--primary);
             z-index: 1;
             pointer-events: none;
         }
 
         #canvas {
-            width: 100%;
-            height: 100%;
+            width: 96%; /* Leggermente più piccolo della corona per stare dentro */
+            height: 96%;
             border-radius: 50%;
-            position: relative;
             z-index: 2;
             transition: transform 5s cubic-bezier(0.15, 0, 0.15, 1);
+            background: #1e293b; /* Colore di fondo se il disegno fallisce */
         }
 
         .pointer {
             position: absolute;
-            top: -25px;
+            top: -20px;
             left: 50%;
             transform: translateX(-50%);
             width: 0; height: 0;
@@ -102,17 +107,17 @@
             color: white;
             background: linear-gradient(135deg, var(--secondary), var(--primary));
             border: none;
-            border-radius: 10px;
+            border-radius: 12px;
             cursor: pointer;
             text-transform: uppercase;
             box-shadow: 0 10px 25px rgba(0, 98, 255, 0.4);
             transition: 0.3s;
-            z-index: 5;
+            z-index: 10;
         }
 
         #spin-btn:hover { transform: scale(1.05); box-shadow: 0 0 30px var(--primary); }
 
-        /* Modal Quiz */
+        /* Quiz Overlay */
         #quiz-overlay {
             display: none;
             position: fixed;
@@ -135,7 +140,7 @@
             display: block; width: 100%; padding: 15px;
             margin: 10px 0; background: rgba(255,255,255,0.05);
             color: white; border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 10px; cursor: pointer; font-size: 1rem;
+            border-radius: 10px; cursor: pointer;
         }
 
         .ans-btn:hover { background: var(--primary); color: #000; font-weight: bold; }
@@ -150,13 +155,107 @@
     
     <div class="wheel-container">
         <div class="pointer"></div>
-        <div class="neon-glow"></div>
-        <canvas id="canvas" width="600" height="600"></canvas>
+        <div class="neon-border"></div>
+        <canvas id="canvas" width="800" height="800"></canvas>
     </div>
 
     <button id="spin-btn">Avvia Protocollo</button>
 
     <div id="quiz-overlay">
         <div class="quiz-card">
-            <h2 id="quiz-title" style="color: var(--primary);">SESSIONE D'ESAME</h2>
-            <p id="question-text" style="font-size: 1.2rem; margin: 
+            <h2 style="color: var(--primary);">SESSIONE D'ESAME</h2>
+            <p id="question-text" style="font-size: 1.2rem; margin: 20px 0;"></p>
+            <div id="options"></div>
+        </div>
+    </div>
+
+    <script>
+        const sectors = [
+            { label: "MECCANICO", color: "#e63946", questions: [
+                { q: "Cos'è il numero di Reynolds?", a: ["Un indice di viscosità", "Rapporto tra forze d'inerzia e viscose", "La velocità critica"], c: 1 },
+                { q: "Il Ciclo di Carnot è:", a: ["Un motore diesel", "Un ciclo teorico ideale", "Un software CAD"], c: 1 }
+            ]},
+            { label: "INFORMATICO", color: "#2a9d8f", questions: [
+                { q: "Cosa significa CPU?", a: ["Central Processing Unit", "Computer Personal User", "Core Process Unit"], c: 0 },
+                { q: "Quale linguaggio è 'Low Level'?", a: ["Python", "Assembly", "Java"], c: 1 }
+            ]},
+            { label: "CIVILE", color: "#457b9d", questions: [
+                { q: "Il Modulo di Young misura:", a: ["La plasticità", "L'elasticità longitudinale", "La durezza"], c: 1 },
+                { q: "Una trave appoggiata-appoggiata è:", a: ["Iperstatica", "Isostatica", "Labile"], c: 1 }
+            ]},
+            { label: "ELETTRONICO", color: "#f4a261", questions: [
+                { q: "La legge di Ohm è:", a: ["V = R/I", "V = R*I", "P = V/I"], c: 1 },
+                { q: "Cosa fa un diodo?", a: ["Amplifica", "Permette corrente in un solo senso", "Accumula carica"], c: 1 }
+            ]},
+            { label: "AEROSPAZIALE", color: "#8338ec", questions: [
+                { q: "La portanza dipende da:", a: ["Solo il peso", "Differenza di pressione", "Magnetismo terrestre"], c: 1 },
+                { q: "Cosa sono i Mach?", a: ["Unità di potenza", "Rapporto velocità oggetto/suono", "Forza d'attrito"], c: 1 }
+            ]}
+        ];
+
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const spinBtn = document.getElementById('spin-btn');
+        
+        let currentRotation = 0;
+
+        function draw() {
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const radius = canvas.width / 2;
+            const arc = (2 * Math.PI) / sectors.length;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            sectors.forEach((s, i) => {
+                const angle = i * arc;
+                
+                // Disegno Spicchio
+                ctx.beginPath();
+                ctx.fillStyle = s.color;
+                ctx.moveTo(centerX, centerY);
+                ctx.arc(centerX, centerY, radius, angle, angle + arc);
+                ctx.lineTo(centerX, centerY);
+                ctx.fill();
+                ctx.strokeStyle = "rgba(255,255,255,0.1)";
+                ctx.stroke();
+
+                // Testo
+                ctx.save();
+                ctx.translate(centerX, centerY);
+                ctx.rotate(angle + arc / 2);
+                ctx.textAlign = "right";
+                ctx.fillStyle = "white";
+                ctx.font = "bold 38px Arial"; // Testo più grande per canvas 800px
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = "black";
+                ctx.fillText(s.label, radius - 40, 15);
+                ctx.restore();
+            });
+        }
+
+        // DISEGNA SUBITO E RIPROVA DOPO 100ms PER SICUREZZA
+        draw();
+        setTimeout(draw, 100);
+        window.onload = draw;
+
+        spinBtn.onclick = () => {
+            spinBtn.disabled = true;
+            const extraDeg = 3600 + Math.floor(Math.random() * 3600);
+            currentRotation += extraDeg;
+            canvas.style.transform = `rotate(${currentRotation}deg)`;
+            
+            setTimeout(() => {
+                const actualDeg = (currentRotation % 360);
+                const idx = Math.floor((360 - actualDeg + 270) % 360 / (360 / sectors.length));
+                showQuiz(idx);
+            }, 5000);
+        };
+
+        function showQuiz(idx) {
+            const disc = sectors[idx];
+            const qObj = disc.questions[Math.floor(Math.random() * disc.questions.length)];
+            const overlay = document.getElementById('quiz-overlay');
+            
+            overlay.style.display = 'flex';
+            document.getElementById('question-text').innerHTML = `Hai puntato: <b style="color:${disc.color}">${disc.label}</b><br
