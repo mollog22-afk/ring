@@ -258,4 +258,26 @@
             const overlay = document.getElementById('quiz-overlay');
             
             overlay.style.display = 'flex';
-            document.getElementById('question-text').innerHTML = `Hai puntato: <b style="color:${disc.color}">${disc.label}</b><br
+            document.getElementById('question-text').innerHTML = `Hai puntato: <b style="color:${disc.color}">${disc.label}</b><br><br>${qObj.q}`;
+            
+            const optDiv = document.getElementById('options');
+            optDiv.innerHTML = '';
+            
+            qObj.a.forEach((ans, i) => {
+                const btn = document.createElement('button');
+                btn.className = 'ans-btn';
+                btn.innerText = ans;
+                btn.onclick = () => {
+                    if(i === qObj.c) {
+                        alert("ECCELLENTE! Benvenuto tra noi, Ingegnere.");
+                    } else {
+                        alert("BOCCIATO! Torna a studiare i fondamentali.");
+                    }
+                    location.reload();
+                };
+                optDiv.appendChild(btn);
+            });
+        }
+    </script>
+</body>
+</html>
