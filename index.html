@@ -12,6 +12,7 @@
         }
 
         body {
+            <audio id="spin-sound" src="musica.mp3"></audio>
             font-family: 'Segoe UI', sans-serif;
             background: #0f172a url('sfondo.jpg') no-repeat center center fixed;
             background-size: cover;
@@ -239,18 +240,28 @@
         setTimeout(draw, 100);
         window.onload = draw;
 
-        spinBtn.onclick = () => {
-            spinBtn.disabled = true;
-            const extraDeg = 3600 + Math.floor(Math.random() * 3600);
-            currentRotation += extraDeg;
-            canvas.style.transform = `rotate(${currentRotation}deg)`;
-            
-            setTimeout(() => {
-                const actualDeg = (currentRotation % 360);
-                const idx = Math.floor((360 - actualDeg + 270) % 360 / (360 / sectors.length));
-                showQuiz(idx);
-            }, 5000);
-        };
+      const spinSound = document.getElementById('spin-sound');
+
+spinBtn.onclick = () => {
+    spinBtn.disabled = true;
+    
+    // 1. Avvia la musica
+    spinSound.currentTime = 0; // Ricomincia dall'inizio
+    spinSound.play();
+
+    const extraDeg = 3600 + Math.floor(Math.random() * 3600);
+    currentRotation += extraDeg;
+    canvas.style.transform = `rotate(${currentRotation}deg)`;
+    
+    setTimeout(() => {
+        // 2. Sfuma o ferma la musica quando la ruota si ferma
+        spinSound.pause();
+        
+        const actualDeg = (currentRotation % 360);
+        const idx = Math.floor((360 - actualDeg + 270) % 360 / (360 / sectors.length));
+        showQuiz(idx);
+    }, 5000); // Questo tempo deve coincidere con la transition CSS (5s)
+};
 
         function showQuiz(idx) {
             const disc = sectors[idx];
