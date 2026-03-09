@@ -12,9 +12,8 @@
         }
 
         body {
-            <audio id="spin-sound" src="musica.mp3"></audio>
             font-family: 'Segoe UI', sans-serif;
-            background: #0f172a url('sfondo.jpg') no-repeat center center fixed;
+            background: #0f172a; /* Rimosso url temporaneamente per test */
             background-size: cover;
             color: white;
             display: flex;
@@ -34,29 +33,10 @@
             z-index: -1;
         }
 
-        .header {
-            text-align: center;
-            margin-bottom: 30px;
-            z-index: 10;
-        }
+        .header { text-align: center; margin-bottom: 30px; z-index: 10; }
+        h1 { font-size: 2.2rem; text-transform: uppercase; letter-spacing: 4px; margin: 0; color: var(--primary); text-shadow: 0 0 15px rgba(0, 242, 255, 0.7); }
+        p { font-size: 1.1rem; color: #94a3b8; margin-top: 5px; text-transform: lowercase; }
 
-        h1 {
-            font-size: 2.2rem;
-            text-transform: uppercase;
-            letter-spacing: 4px;
-            margin: 0;
-            color: var(--primary);
-            text-shadow: 0 0 15px rgba(0, 242, 255, 0.7);
-        }
-
-        p {
-            font-size: 1.1rem;
-            color: #94a3b8;
-            margin-top: 5px;
-            text-transform: lowercase;
-        }
-
-        /* Contenitore Ruota con Corona Neon */
         .wheel-container {
             position: relative;
             width: 85vw;
@@ -69,8 +49,7 @@
 
         .neon-border {
             position: absolute;
-            width: 100%;
-            height: 100%;
+            width: 100%; height: 100%;
             border-radius: 50%;
             border: 4px solid var(--primary);
             box-shadow: 0 0 25px var(--primary), inset 0 0 15px var(--primary);
@@ -79,18 +58,15 @@
         }
 
         #canvas {
-            width: 96%; /* Leggermente più piccolo della corona per stare dentro */
-            height: 96%;
+            width: 96%; height: 96%;
             border-radius: 50%;
             z-index: 2;
             transition: transform 5s cubic-bezier(0.15, 0, 0.15, 1);
-            background: #1e293b; /* Colore di fondo se il disegno fallisce */
         }
 
         .pointer {
             position: absolute;
-            top: -20px;
-            left: 50%;
+            top: -20px; left: 50%;
             transform: translateX(-50%);
             width: 0; height: 0;
             border-left: 20px solid transparent;
@@ -116,9 +92,6 @@
             z-index: 10;
         }
 
-        #spin-btn:hover { transform: scale(1.05); box-shadow: 0 0 30px var(--primary); }
-
-        /* Quiz Overlay */
         #quiz-overlay {
             display: none;
             position: fixed;
@@ -143,11 +116,11 @@
             color: white; border: 1px solid rgba(255,255,255,0.1);
             border-radius: 10px; cursor: pointer;
         }
-
-        .ans-btn:hover { background: var(--primary); color: #000; font-weight: bold; }
     </style>
 </head>
 <body>
+
+    <audio id="spin-sound" src="WhatsApp Audio 2026-03-08 at 20.15.00 (mp3cut.net).mp3"></audio>
 
     <div class="header">
         <h1>Ingegneria Wheel</h1>
@@ -197,6 +170,7 @@
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
         const spinBtn = document.getElementById('spin-btn');
+        const spinSound = document.getElementById('spin-sound');
         
         let currentRotation = 0;
 
@@ -205,85 +179,64 @@
             const centerY = canvas.height / 2;
             const radius = canvas.width / 2;
             const arc = (2 * Math.PI) / sectors.length;
-
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
             sectors.forEach((s, i) => {
                 const angle = i * arc;
-                
-                // Disegno Spicchio
                 ctx.beginPath();
                 ctx.fillStyle = s.color;
                 ctx.moveTo(centerX, centerY);
                 ctx.arc(centerX, centerY, radius, angle, angle + arc);
                 ctx.lineTo(centerX, centerY);
                 ctx.fill();
-                ctx.strokeStyle = "rgba(255,255,255,0.1)";
-                ctx.stroke();
-
-                // Testo
                 ctx.save();
                 ctx.translate(centerX, centerY);
                 ctx.rotate(angle + arc / 2);
                 ctx.textAlign = "right";
                 ctx.fillStyle = "white";
-                ctx.font = "bold 38px Arial"; // Testo più grande per canvas 800px
-                ctx.shadowBlur = 10;
-                ctx.shadowColor = "black";
+                ctx.font = "bold 38px Arial";
                 ctx.fillText(s.label, radius - 40, 15);
                 ctx.restore();
             });
         }
 
-        // DISEGNA SUBITO E RIPROVA DOPO 100ms PER SICUREZZA
         draw();
-        setTimeout(draw, 100);
-        window.onload = draw;
 
-      const spinSound = document.getElementById('spin-sound');
+        spinBtn.onclick = () => {
+            spinBtn.disabled = true;
+            
+            // Gestione audio sicura
+            if (spinSound) {
+                spinSound.currentTime = 0;
+                spinSound.play().catch(e => console.log("Audio non disponibile ancora"));
+            }
 
-spinBtn.onclick = () => {
-    spinBtn.disabled = true;
-    
-    // 1. Avvia la musica
-    spinSound.currentTime = 0; // Ricomincia dall'inizio
-    spinSound.play();
-
-    const extraDeg = 3600 + Math.floor(Math.random() * 3600);
-    currentRotation += extraDeg;
-    canvas.style.transform = `rotate(${currentRotation}deg)`;
-    
-    setTimeout(() => {
-        // 2. Sfuma o ferma la musica quando la ruota si ferma
-        spinSound.pause();
-        
-        const actualDeg = (currentRotation % 360);
-        const idx = Math.floor((360 - actualDeg + 270) % 360 / (360 / sectors.length));
-        showQuiz(idx);
-    }, 5000); // Questo tempo deve coincidere con la transition CSS (5s)
-};
+            const extraDeg = 3600 + Math.floor(Math.random() * 3600);
+            currentRotation += extraDeg;
+            canvas.style.transform = `rotate(${currentRotation}deg)`;
+            
+            setTimeout(() => {
+                if (spinSound) spinSound.pause();
+                const actualDeg = (currentRotation % 360);
+                const idx = Math.floor((360 - actualDeg + 270) % 360 / (360 / sectors.length));
+                showQuiz(idx);
+            }, 5000);
+        };
 
         function showQuiz(idx) {
             const disc = sectors[idx];
             const qObj = disc.questions[Math.floor(Math.random() * disc.questions.length)];
             const overlay = document.getElementById('quiz-overlay');
-            
             overlay.style.display = 'flex';
             document.getElementById('question-text').innerHTML = `Hai puntato: <b style="color:${disc.color}">${disc.label}</b><br><br>${qObj.q}`;
-            
             const optDiv = document.getElementById('options');
             optDiv.innerHTML = '';
-            
             qObj.a.forEach((ans, i) => {
                 const btn = document.createElement('button');
                 btn.className = 'ans-btn';
                 btn.innerText = ans;
                 btn.onclick = () => {
-                    if(i === qObj.c) {
-                        alert("ECCELLENTE! Benvenuto tra noi, Ingegnere.");
-                    } else {
-                        alert("BOCCIATO! Torna a studiare i fondamentali.");
-                    }
+                    alert(i === qObj.c ? "ECCELLENTE! Benvenuto tra noi, Ingegnere." : "BOCCIATO! Torna a studiare.");
                     location.reload();
                 };
                 optDiv.appendChild(btn);
