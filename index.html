@@ -11,21 +11,21 @@
             --bg: #0f172a;
         }
 
-     body {
-    font-family: 'Segoe UI', sans-serif;
-    /* Prova a caricare lo sfondo, altrimenti usa un gradiente radiale */
-    background: url('sfondo.jpg') no-repeat center center fixed, 
-                radial-gradient(circle, #1e293b 0%, #0f172a 100%);
-    background-size: cover;
-    color: white;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    min-height: 100vh;
-    margin: 0;
-    overflow: hidden;
-}
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            /* Sfondo con fallback a gradiente se sfondo.jpg manca */
+            background: url('sfondo.jpg') no-repeat center center fixed, 
+                        radial-gradient(circle, #1e293b 0%, #0f172a 100%);
+            background-size: cover;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
 
         .header { text-align: center; margin-bottom: 30px; z-index: 10; }
         h1 { font-size: 2.2rem; text-transform: uppercase; letter-spacing: 4px; margin: 0; color: var(--primary); text-shadow: 0 0 15px rgba(0, 242, 255, 0.7); }
@@ -80,11 +80,13 @@
             text-transform: uppercase;
             box-shadow: 0 10px 25px rgba(0, 98, 255, 0.4);
             transition: 0.3s;
+            z-index: 10;
         }
 
         #spin-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
-        #quiz-overlay {
+        /* Overlay Quiz e Risultato */
+        #quiz-overlay, #result-overlay {
             display: none;
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -108,11 +110,15 @@
             color: white; border: 1px solid rgba(255,255,255,0.1);
             border-radius: 10px; cursor: pointer;
             transition: 0.2s;
+            text-transform: uppercase;
+            font-weight: bold;
         }
         .ans-btn:hover { background: var(--secondary); }
     </style>
 </head>
 <body>
+
+    <audio id="spin-sound" src="musica.mp3" preload="auto"></audio>
 
     <div class="header">
         <h1>Ingegneria Wheel</h1>
@@ -135,73 +141,44 @@
         </div>
     </div>
 
+    <div id="result-overlay">
+        <div class="quiz-card">
+            <h2 id="result-title" style="font-size: 2rem;"></h2>
+            <p id="result-text" style="margin: 20px 0; font-size: 1.1rem;"></p>
+            <button onclick="location.reload()" class="ans-btn" style="background: var(--primary); color: #0f172a;">Riprova</button>
+        </div>
+    </div>
+
     <script>
         const sectors = [
             { label: "MECCANICO", color: "#e63946", questions: [
                 { q: "Cos'è il numero di Reynolds?", a: ["Un indice di viscosità", "Rapporto tra forze d'inerzia e viscose", "La velocità critica"], c: 1 },
                 { q: "Il Ciclo di Carnot è:", a: ["Un motore diesel", "Un ciclo teorico ideale", "Un software CAD"], c: 1 },
-                { q: "Cosa descrive la legge di Hooke?", a: ["La deformazione plastica", "La proporzionalità tra sforzo e deformazione elastica", "La viscosità dei fluidi"], c: 1 },
-                { q: "In un sistema isolato, l'entropia:", a: ["Diminuisce sempre", "Rimane costante", "Tende ad aumentare nel tempo"], c: 2 },
-                { q: "Qual è l'unità di misura della potenza nel SI?", a: ["Joule", "Watt", "Newton"], c: 1 },
-                { q: "Un accoppiamento H7/g6 indica:", a: ["Interferenza certa", "Gioco certo", "Accoppiamento incerto"], c: 1 },
-                { q: "La viscosità cinematica è:", a: ["Viscosità dinamica / Densità", "Forza / Superficie", "Lavoro / Tempo"], c: 0 },
-                { q: "Il diagramma di Mohr serve a:", a: ["Calcolare il calore", "Rappresentare lo stato di tensione in un punto", "Studiare i motori a vapore"], c: 1 },
-                { q: "Cosa definisce il numero di Nusselt?", a: ["Il trasporto di calore convettivo", "La durezza di un metallo", "La velocità del suono"], c: 0 },
-                { q: "La funzione di un volano è:", a: ["Raffreddare il motore", "Regolarizzare il moto rotatorio", "Aumentare la velocità massima"], c: 1 }
+                { q: "Cosa descrive la legge di Hooke?", a: ["Deformazione plastica", "Proporzionalità tra sforzo e deformazione", "Viscosità"], c: 1 }
             ]},
             { label: "INFORMATICO", color: "#2a9d8f", questions: [
                 { q: "Cosa significa CPU?", a: ["Central Processing Unit", "Computer Personal User", "Core Process Unit"], c: 0 },
                 { q: "Quale linguaggio è 'Low Level'?", a: ["Python", "Assembly", "Java"], c: 1 },
-                { q: "Complessità temporale media di inserimento in Hash Table?", a: ["O(n)", "O(log n)", "O(1)"], c: 2 },
-                { q: "Cosa significa l'acronimo HTTP?", a: ["HyperText Transfer Protocol", "High Tech Tool Process", "Hyperlink Text Test"], c: 0 },
-                { q: "In SQL, quale comando elimina tutti i record di una tabella?", a: ["DELETE ALL", "TRUNCATE", "DROP TABLE"], c: 1 },
-                { q: "Cos'è un deadlock?", a: ["Un virus", "Uno stallo tra processi per risorse reciproche", "Un errore di sintassi"], c: 1 },
-                { q: "Quale protocollo garantisce la consegna dei pacchetti?", a: ["UDP", "IP", "TCP"], c: 2 },
-                { q: "Il polimorfismo è un concetto di:", a: ["Programmazione Procedurale", "OOP (Object Oriented)", "Sistemi Operativi"], c: 1 },
-                { q: "Quanti bit ci sono in un Kilobyte (KB) standard SI?", a: ["8000", "1024", "1000"], c: 0 },
-                { q: "Cos'è il Kernel?", a: ["Un'interfaccia grafica", "Il nucleo del sistema operativo", "Un compilatore C++"], c: 1 }
+                { q: "Complessità di inserimento in Hash Table?", a: ["O(n)", "O(log n)", "O(1)"], c: 2 }
             ]},
             { label: "CIVILE", color: "#457b9d", questions: [
                 { q: "Il Modulo di Young misura:", a: ["La plasticità", "L'elasticità longitudinale", "La durezza"], c: 1 },
-                { q: "Una trave appoggiata-appoggiata è:", a: ["Iperstatica", "Isostatica", "Labile"], c: 1 },
-                { q: "Cos'è il cemento armato precompresso?", a: ["Cemento misto a vetro", "Calcestruzzo con barre d'acciaio tese preventivamente", "Cemento asciugato al forno"], c: 1 },
-                { q: "La prova penetrometrica serve a studiare:", a: ["La porosità dei mattoni", "La resistenza del terreno", "La qualità dell'aria"], c: 1 },
-                { q: "Cosa indica la 'freccia' in una trave?", a: ["La direzione del carico", "Lo spostamento massimo verticale", "La lunghezza della trave"], c: 1 },
-                { q: "Momento d'inerzia di un rettangolo (bh) rispetto alla base?", a: ["bh³/12", "bh³/3", "bh²/2"], c: 1 },
-                { q: "In idraulica, il carico piezometrico è:", a: ["Quota + altezza di pressione", "Solo la velocità", "Pressione / Temperatura"], c: 0 },
-                { q: "Cosa definisce il limite di snervamento?", a: ["La rottura del materiale", "Il passaggio da campo elastico a plastico", "La fusione"], c: 1 },
-                { q: "Cos'è una capriata?", a: ["Un tipo di fondazione", "Una struttura reticolare piana", "Un ponte sospeso"], c: 1 },
-                { q: "La legge di Darcy regola:", a: ["Il flusso nei mezzi porosi", "La caduta dei gravi", "La pressione idrostatica"], c: 0 }
+                { q: "Una trave appoggiata-appoggiata è:", a: ["Iperstatica", "Isostatica", "Labile"], c: 1 }
             ]},
             { label: "ELETTRONICO", color: "#f4a261", questions: [
                 { q: "La legge di Ohm è:", a: ["V = R/I", "V = R*I", "P = V/I"], c: 1 },
-                { q: "Cosa fa un diodo?", a: ["Amplifica", "Permette corrente in un solo senso", "Accumula carica"], c: 1 },
-                { q: "Unità di misura della capacità elettrica?", a: ["Henry", "Ohm", "Farad"], c: 2 },
-                { q: "Un guadagno di 20 dB corrisponde a un rapporto di:", a: ["20", "10", "100"], c: 1 },
-                { q: "Cosa significa CMOS?", a: ["Complementary Metal-Oxide-Semiconductor", "Circuit Mode OS", "Common Metal Object"], c: 0 },
-                { q: "Il teorema di Nyquist-Shannon riguarda:", a: ["La potenza dissipata", "Il campionamento dei segnali", "La velocità della luce"], c: 1 },
-                { q: "Funzione principale di un transistor BJT?", a: ["Solo interruttore", "Amplificatore o interruttore", "Generatore di tensione"], c: 1 },
-                { q: "In un circuito RC, la costante di tempo è:", a: ["R / C", "R * C", "V / R"], c: 1 },
-                { q: "Cosa misura un oscilloscopio?", a: ["La resistenza", "Variazione della tensione nel tempo", "La carica statica"], c: 1 },
-                { q: "Frequenza di rete standard in Europa?", a: ["60 Hz", "50 Hz", "110 Hz"], c: 1 }
+                { q: "Cosa fa un diodo?", a: ["Amplifica", "Corrente in un solo senso", "Accumula carica"], c: 1 }
             ]},
             { label: "AEROSPAZIALE", color: "#8338ec", questions: [
-                { q: "La portanza dipende da:", a: ["Solo il peso", "Differenza di pressione dorso/ventre", "Magnetismo"], c: 1 },
-                { q: "Cosa sono i Mach?", a: ["Unità di potenza", "Rapporto velocità oggetto/suono", "Forza d'attrito"], c: 1 },
-                { q: "Cos'è l'angolo di attacco?", a: ["Angolo tra corda alare e vento relativo", "Inclinazione della coda", "Angolo di virata"], c: 0 },
-                { q: "Velocità di fuga dalla Terra?", a: ["7.9 km/s", "11.2 km/s", "300.000 km/s"], c: 1 },
-                { q: "L'equazione di Tsiolkovsky descrive:", a: ["Il moto dei razzi", "Il clima orbitale", "La pressione atmosferica"], c: 0 },
-                { q: "Il numero di Knudsen definisce:", a: ["La turbolenza", "Il grado di rarefazione di un gas", "La velocità ipersonica"], c: 1 },
-                { q: "Cos'è il flutter?", a: ["Un tipo di carburante", "Un'instabilità aeroelastica", "Il rumore del motore"], c: 1 },
-                { q: "Quale parte genera la spinta in un turbogetto?", a: ["Il compressore", "L'ugello di scarico", "La presa d'aria"], c: 1 },
-                { q: "Un satellite in orbita è in:", a: ["Caduta libera perenne", "Equilibrio statico", "Moto rettilineo"], c: 0 },
-                { q: "Cos'è lo strato limite?", a: ["Il confine dell'atmosfera", "Zona di fluido vicino alla superficie con effetti viscosi", "La barriera del suono"], c: 1 }
+                { q: "La portanza dipende da:", a: ["Solo il peso", "Differenza pressione dorso/ventre", "Magnetismo"], c: 1 },
+                { q: "Velocità di fuga dalla Terra?", a: ["7.9 km/s", "11.2 km/s", "300.000 km/s"], c: 1 }
             ]}
         ];
 
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
         const spinBtn = document.getElementById('spin-btn');
+        const spinSound = document.getElementById('spin-sound');
         let currentRotation = 0;
 
         function draw() {
@@ -234,54 +211,61 @@
 
         spinBtn.onclick = () => {
             spinBtn.disabled = true;
+            
+            // Audio Play
+            if (spinSound) {
+                spinSound.currentTime = 0;
+                spinSound.play().catch(() => console.log("Audio non caricato"));
+            }
+
             const extraDeg = 1800 + Math.floor(Math.random() * 1800);
             currentRotation += extraDeg;
             canvas.style.transform = `rotate(${currentRotation}deg)`;
             
             setTimeout(() => {
+                if (spinSound) spinSound.pause();
                 const actualDeg = (currentRotation % 360);
-                // Calcolo corretto dell'indice in base alla posizione della freccia (in alto = 270 deg)
                 const sectorAngle = 360 / sectors.length;
                 const idx = Math.floor(((360 - actualDeg + 270) % 360) / sectorAngle);
                 showQuiz(idx);
             }, 5000);
         };
 
-    function showQuiz(idx) {
-    const disc = sectors[idx];
-    const qObj = disc.questions[Math.floor(Math.random() * disc.questions.length)];
-    const overlay = document.getElementById('quiz-overlay');
-    const optDiv = document.getElementById('options');
-    
-    overlay.style.display = 'flex';
-    document.getElementById('question-text').innerHTML = `Hai puntato: <b style="color:${disc.color}">${disc.label}</b><br><br>${qObj.q}`;
-    
-    optDiv.innerHTML = '';
-    qObj.a.forEach((ans, i) => {
-        const btn = document.createElement('button');
-        btn.className = 'ans-btn';
-        btn.innerText = ans;
-        btn.onclick = () => {
-            overlay.style.display = 'none'; // Chiudi il quiz
-            const resOverlay = document.getElementById('result-overlay');
-            const resTitle = document.getElementById('result-title');
-            const resText = document.getElementById('result-text');
+        function showQuiz(idx) {
+            const disc = sectors[idx];
+            const qObj = disc.questions[Math.floor(Math.random() * disc.questions.length)];
+            const overlay = document.getElementById('quiz-overlay');
+            const optDiv = document.getElementById('options');
             
-            resOverlay.style.display = 'flex'; // Apri il risultato personalizzato
+            overlay.style.display = 'flex';
+            document.getElementById('question-text').innerHTML = `Hai puntato: <b style="color:${disc.color}">${disc.label}</b><br><br>${qObj.q}`;
+            
+            optDiv.innerHTML = '';
+            qObj.a.forEach((ans, i) => {
+                const btn = document.createElement('button');
+                btn.className = 'ans-btn';
+                btn.innerText = ans;
+                btn.onclick = () => {
+                    overlay.style.display = 'none';
+                    const resOverlay = document.getElementById('result-overlay');
+                    const resTitle = document.getElementById('result-title');
+                    const resText = document.getElementById('result-text');
+                    
+                    resOverlay.style.display = 'flex';
 
-            if (i === qObj.c) {
-                resTitle.innerText = "ECCELLENTE!";
-                resTitle.style.color = "#00f2ff";
-                resText.innerText = "Esame superato. Benvenuto tra noi, Ingegnere.";
-            } else {
-                resTitle.innerText = "BOCCIATO!";
-                resTitle.style.color = "#ff4757";
-                resText.innerText = "Il professore non è soddisfatto. Torna a studiare!";
-            }
-        };
-        optDiv.appendChild(btn);
-    });
-}
+                    if (i === qObj.c) {
+                        resTitle.innerText = "ECCELLENTE!";
+                        resTitle.style.color = "var(--primary)";
+                        resText.innerText = "Esame superato. Sei ufficialmente un Ingegnere.";
+                    } else {
+                        resTitle.innerText = "BOCCIATO!";
+                        resTitle.style.color = "#ff4757";
+                        resText.innerText = "Risposta errata. La sessione finisce qui!";
+                    }
+                };
+                optDiv.appendChild(btn);
+            });
+        }
     </script>
 </body>
 </html>
