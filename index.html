@@ -247,30 +247,41 @@
             }, 5000);
         };
 
-        function showQuiz(idx) {
-            const disc = sectors[idx];
-            const qObj = disc.questions[Math.floor(Math.random() * disc.questions.length)];
-            const overlay = document.getElementById('quiz-overlay');
-            const optDiv = document.getElementById('options');
+    function showQuiz(idx) {
+    const disc = sectors[idx];
+    const qObj = disc.questions[Math.floor(Math.random() * disc.questions.length)];
+    const overlay = document.getElementById('quiz-overlay');
+    const optDiv = document.getElementById('options');
+    
+    overlay.style.display = 'flex';
+    document.getElementById('question-text').innerHTML = `Hai puntato: <b style="color:${disc.color}">${disc.label}</b><br><br>${qObj.q}`;
+    
+    optDiv.innerHTML = '';
+    qObj.a.forEach((ans, i) => {
+        const btn = document.createElement('button');
+        btn.className = 'ans-btn';
+        btn.innerText = ans;
+        btn.onclick = () => {
+            overlay.style.display = 'none'; // Chiudi il quiz
+            const resOverlay = document.getElementById('result-overlay');
+            const resTitle = document.getElementById('result-title');
+            const resText = document.getElementById('result-text');
             
-            overlay.style.display = 'flex';
-            document.getElementById('question-text').innerHTML = `Hai puntato: <b style="color:${disc.color}">${disc.label}</b><br><br>${qObj.q}`;
-            
-            optDiv.innerHTML = '';
-            qObj.a.forEach((ans, i) => {
-                const btn = document.createElement('button');
-                btn.className = 'ans-btn';
-                btn.innerText = ans;
-                btn.onclick = () => {
-                    if (i === qObj.c) {
-                        alert("ECCELLENTE! Esame superato.");
-                    } else {
-                        alert("BOCCIATO! Torna a studiare.");
-                    }
-                    location.reload();
-                };
-                optDiv.appendChild(btn);
-            });
+            resOverlay.style.display = 'flex'; // Apri il risultato personalizzato
+
+            if (i === qObj.c) {
+                resTitle.innerText = "ECCELLENTE!";
+                resTitle.style.color = "#00f2ff";
+                resText.innerText = "Esame superato. Benvenuto tra noi, Ingegnere.";
+            } else {
+                resTitle.innerText = "BOCCIATO!";
+                resTitle.style.color = "#ff4757";
+                resText.innerText = "Il professore non è soddisfatto. Torna a studiare!";
+            }
+        };
+        optDiv.appendChild(btn);
+    });
+}
         }
     </script>
 </body>
